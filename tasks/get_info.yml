@@ -1,0 +1,8 @@
+- name: ip
+  azure_rm_publicipaddress_facts:
+    resource_group: "{{ ressourcegroup }}"
+    name: "{{ publicip_name }}"
+  register: try
+
+- debug:
+    msg: "{{ try.ansible_facts.azure_publicipaddresses[0].properties.ipAddress }}"

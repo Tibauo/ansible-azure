@@ -1,0 +1,16 @@
+---
+# defaults file for azure
+ressourcegroup: RG-Test-Ansible
+region: westeurope
+vnet_name: RG-Test-Ansible-vnet
+vnetaddressprefix: "10.0.0.0/16"
+publicip_name: MonIP
+subnet_name: RG-Test-Ansible-subnet
+subnet_prefix: "10.0.0.0/16"
+
+securitygroup_name: monsecuritygroup
+nic_name: nic
+
+vmsize: Standard_A0
+vm:
+- { name: mavm, login: Tibauo, password: AzeRTy-123 }

@@ -1,0 +1,65 @@
+---
+# tasks file for azure
+
+- name: Create resource group
+  azure_rm_resourcegroup:
+    name: "{{ ressourcegroup }}"
+    location: "{{ region }}"
+    state: present
+
+- name: Create virtual network
+  azure_rm_virtualnetwork:
+    resource_group: "{{ ressourcegroup }}"
+    name: "{{ vnet_name }}"
+    address_prefixes: "{{ vnetaddressprefix }}"
+    state: present
+
+- name: Add subnet
+  azure_rm_subnet:
+    resource_group: "{{ ressourcegroup }}"
+    name: "{{ subnet_name }}"
+    address_prefix: "{{ subnet_prefix }}"
+    state: present
+    virtual_network: "{{ vnet_name }}"
+
+- name: Create Network Security Group that allows SSH
+  azure_rm_securitygroup:
+    resource_group: "{{ ressourcegroup }}"
+    state: present
+    name: "{{ securitygroup_name }}"
+
+- name: Create virtual network inteface card
+  azure_rm_networkinterface:
+    resource_group: "{{ ressourcegroup }}"
+    name: "{{ nic_name }}"
+    virtual_network: "{{ vnet_name }}"
+    subnet: "{{ subnet_name }}"
+    public_ip_name: "{{ publicip_name }}"
+    security_group: "{{ securitygroup_name }}"
+    state: present
+
+- name: Create VM with defaults
+  azure_rm_virtualmachine:
+    resource_group: "{{ ressourcegroup }}"
+    auth_source: auto
+    name: "{{ item.name }}"
+    network_interfaces: "{{ nic_name }}"
+    vm_size: "{{ vmsize }}"
+    admin_username: "{{ item.login }}"
+    admin_password: "{{ item.password }}"
+    state: present
+    image:
+      offer: CentOS
+      publisher: OpenLogic
+      sku: '7.1'
+      version: latest
+  register: instance
+  with_items: "{{ vm }}"
+
+- name: debug
+  debug:
+    msg: "{{ instance.results[0].ansible_facts.azure_vm.id }}"
+
+- name: debug
+  debug:
+    msg: "{{ instance }}"

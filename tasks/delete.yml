@@ -1,0 +1,76 @@
+---
+# tasks file for azure
+- name: Get facts by name
+  azure_rm_virtualmachine_facts:
+    resource_group: "{{ ressourcegroup }}"
+    name: "{{ item.name }}"
+  with_items: "{{ vm }}"
+  register: instance
+
+- name: debug
+  debug:
+    msg: "{{ instance.results[0].vms[0].storage_account_name }}"
+  register: volume
+
+- name: Delete VM
+  azure_rm_virtualmachine:
+    resource_group: "{{ ressourcegroup }}"
+    auth_source: auto
+    name: "{{ item.name }}"
+    network_interfaces: "{{ nic_name }}"
+    vm_size: "{{ vmsize }}"
+    admin_username: "{{ item.login }}"
+    admin_password: "{{ item.password }}"
+    state: absent
+    image:
+      offer: CentOS
+      version: latest
+      publisher: OpenLogic
+      sku: '7.1'
+  register: instance
+  with_items: "{{ vm }}"
+
+- name: Delete virtual network inteface card
+  azure_rm_networkinterface:
+    resource_group: "{{ ressourcegroup }}"
+    name: "{{ nic_name }}"
+    virtual_network: "{{ vnet_name }}"
+    subnet: "{{ subnet_name }}"
+    security_group: "{{ securitygroup_name }}"
+    state: absent
+
+- name: Delete Network Security Group that allows SSH
+  azure_rm_securitygroup:
+    resource_group: "{{ ressourcegroup }}"
+    state: absent
+    name: "{{ securitygroup_name }}"
+
+- name: Delete subnet
+  azure_rm_subnet:
+    resource_group: "{{ ressourcegroup }}"
+    name: "{{ subnet_name }}"
+    address_prefix: "{{ subnet_prefix }}"
+    state: absent
+    virtual_network: "{{ vnet_name }}"
+
+- name: Delete volume
+  azure_rm_storageaccount:
+    resource_group: "{{ ressourcegroup }}"
+    name: "{{ volume.msg }}"
+    state: absent
+
+- name: Delete virtual network
+  azure_rm_virtualnetwork:
+    resource_group: "{{ ressourcegroup }}"
+    name: "{{ vnet_name }}"
+    address_prefixes: "{{ vnetaddressprefix }}"
+    state: absent
+
+- wait_for:
+    timeout: 5
+
+- name: delete resource group
+  azure_rm_resourcegroup:
+    name: "{{ ressourcegroup }}"
+    location: "{{ region }}"
+    state: absent
